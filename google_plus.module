@@ -1,0 +1,63 @@
+<?php
+
+function google_plus_form_alter(&$form, &$form_state, &$form_id) {
+	if (isset($form['#user'])) {
+    $user = user_load($form['#user']->uid);
+  }
+
+	if ($form_id == 'user_profile_form') {
+		$form['google_plus'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Google+ Settings',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+		$form['google_plus']['client_id'] = array(
+			'#type' => 'textfield',
+      '#title' => t('Client ID'),
+      '#default_value' => !empty($user->data['google_plus']['client_id']) ? $user->data['google_plus']['client_id'] : '',
+		);
+
+		$form['google_plus']['client_secret'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Client Secret'),
+      '#default_value' => !empty($user->data['google_plus']['client_secret']) ? $user->data['google_plus']['client_secret'] : '',
+    );
+
+		$form['google_plus']['redirect_uri'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Redirect URI'),
+      '#default_value' => !empty($user->data['google_plus']['redirect_uri']) ? $user->data['google_plus']['redirect_uri'] : '',
+    );
+
+		$form['google_plus']['api_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('API Key'),
+      '#default_value' => !empty($user->data['google_plus']['api_key']) ? $user->data['google_plus']['api_key'] : '',
+    );
+
+		$form['#validate'][] = 'google_plus_user_profile_validate';
+		$form['#submit'][] = 'google_plus_user_profile_submit';
+	}
+}
+
+function google_plus_user_profile_validate($form, $form_state) {
+	if (isset($form['#user'])) {
+    if (!valid_url($form_state['values']['redirect_uri'], TRUE)) {
+			form_set_error('redirect_uri', t('Invalid Request URI.'));
+		}
+  }
+}
+
+function google_plus_user_profile_submit($form, $form_state) {
+	if (isset($form['#user'])) {
+    $user = user_load($form['#user']->uid);
+
+	  $user->data['google_plus']['client_id'] = $form_state['values']['client_id'];
+	  $user->data['google_plus']['client_secret'] = $form_state['values']['client_secret'];
+	  $user->data['google_plus']['redirect_uri'] = $form_state['values']['redirect_uri'];
+	  $user->data['google_plus']['api_key'] = $form_state['values']['api_key'];
+  	user_save($user);
+  }
+}
