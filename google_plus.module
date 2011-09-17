@@ -53,11 +53,260 @@ function google_plus_user_profile_validate($form, $form_state) {
 function google_plus_user_profile_submit($form, $form_state) {
 	if (isset($form['#user'])) {
     $user = user_load($form['#user']->uid);
+		$plus = $user->data['google_plus'];
 
-	  $user->data['google_plus']['client_id'] = $form_state['values']['client_id'];
-	  $user->data['google_plus']['client_secret'] = $form_state['values']['client_secret'];
-	  $user->data['google_plus']['redirect_uri'] = $form_state['values']['redirect_uri'];
-	  $user->data['google_plus']['api_key'] = $form_state['values']['api_key'];
-  	user_save($user);
+		if ($plus['client_id'] != $form_state['values']['client_id']) {
+		  $user->data['google_plus']['client_id'] = $form_state['values']['client_id'];
+			$ch = 1;
+		}
+
+		if ($plus['client_secret'] != $form_state['values']['client_secret']) {
+		  $user->data['google_plus']['client_secret'] = $form_state['values']['client_secret'];
+			$ch = 1;
+		}
+
+		if ($plus['redirect_uri'] != $form_state['values']['redirect_uri']) {
+		  $user->data['google_plus']['redirect_uri'] = $form_state['values']['redirect_uri'];
+			$ch = 1;
+		}
+
+		if ($plus['api_key'] != $form_state['values']['api_key']) {
+		  $user->data['google_plus']['api_key'] = $form_state['values']['api_key'];
+			$ch = 1;
+		}
+
+		if (isset($ch)) {
+	  	user_save($user);
+			google_plus_authorize();
+		}
   }
+}
+
+function google_plus_authorize() {
+	global $user;
+
+	$client = new apiClient();
+	$client->setApplicationName("Google+ Drupal Module Made");
+
+	$client->setClientId($user->data['google_plus']['client_id']);
+	$client->setClientSecret($user->data['google_plus']['client_secret']);
+	$client->setRedirectUri($user->data['google_plus']['redirect_uri']);
+	$client->setDeveloperKey($user->data['google_plus']['api_key']);
+
+	$client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
+	$plus = new apiPlusService($client);
+
+	$authUrl = $client->createAuthUrl();
+	drupal_goto($authUrl);
+}
+
+function google_plus_get_access_token() {
+	if (isset($_GET['code'])) {
+		global $user;
+
+		$client = new apiClient();
+  	$client->setApplicationName("Google+ Drupal Module Made");
+
+	  $client->setClientId($user->data['google_plus']['client_id']);
+  	$client->setClientSecret($user->data['google_plus']['client_secret']);
+	  $client->setRedirectUri($user->data['google_plus']['redirect_uri']);
+  	$client->setDeveloperKey($user->data['google_plus']['api_key']);
+
+	  $client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
+		$plus = new apiPlusService($client);
+
+  	$client->authenticate();
+
+	  $user->data['google_plus']['access_token'] = $client->getAccessToken();
+		user_save($user);
+
+		$options['query'] = array(
+			'google_plus_success' => 'success',
+		);
+		drupal_goto('google_plus/access_token', $options);
+
+	} elseif(isset($_GET['google_plus_success'])) {
+
+		drupal_set_message(t('Your Google+ authentication token has been successfully saved.'));
+		return '';
+
+	} elseif (isset($_GET['error'])) {
+
+		$options['query'] = array(
+			'google_plus_error' => $_GET['error'],
+		);
+		drupal_goto('google_plus/access_token', $options);
+
+	} elseif (isset($_GET['google_plus_error'])) {
+
+		drupal_set_message(t('You denied access to your own Google+ account.'), 'error');
+		return '';
+
+	}
+}
+
+function google_plus_permission() {
+  return array(
+    'access google plus' => array(
+      'title' => t('Access Google+'),
+    ),
+	);
+}
+
+function google_plus_menu() {
+	$items = array();
+
+	$items['user/%/google_plus'] = array(
+		'title' => t('Google+ Profile'),
+    'description' => t('Shows Google+ profile of the logged in user.'),
+    'page callback' => 'google_plus_profile',
+    'page arguments' => array('access google plus'),
+    'access arguments' => array('access google plus'),
+    'type' => MENU_LOCAL_TASK,
+	);
+
+	$items['google_plus/access_token'] = array(
+    'title' => t('Google+ Access Token'),
+    'description' => t('Shows Google+ profile of the logged in user.'),
+    'page callback' => 'google_plus_get_access_token',
+    'page arguments' => array(),
+    'access arguments' => array('access google plus'),
+  );
+
+	return $items;
+}
+
+function google_plus_profile() {
+	global $user;
+
+	$client = new apiClient();
+  $client->setApplicationName("Google+ Drupal Module Made");
+
+  $client->setClientId($user->data['google_plus']['client_id']);
+  $client->setClientSecret($user->data['google_plus']['client_secret']);
+  $client->setRedirectUri($user->data['google_plus']['redirect_uri']);
+  $client->setDeveloperKey($user->data['google_plus']['api_key']);
+
+  $client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
+  $plus = new apiPlusService($client);
+
+	$client->setAccessToken($user->data['google_plus']['access_token']);
+
+	if ($client->getAccessToken()) {
+		$me = $plus->people->get('me');
+
+  	$optParams = array('maxResults' => 100);
+	  $activities = $plus->activities->listActivities('me', 'public', $optParams);
+
+		return theme('google_plus_personal_profile', array('me' => $me));
+	}
+}
+
+function google_plus_theme() {
+	$return_array = array(
+    'google_plus_personal_profile' => array(
+      'variables' => array(
+				'me' => NULL,
+			),
+    ),
+  );
+
+	return $return_array;
+}
+
+function theme_google_plus_personal_profile($variables) {
+	$return = '';
+	$me = $variables['me'];
+
+	if ($me) {
+		$profile_pic = theme('image', array('path' => $me['image']['url'] . '?sz=200'));
+		$caption = '<span id="displayName">' . l($me['displayName'], $me['url']) . '</span>';
+		$caption .= '<br />';
+		$caption .= '<span id="tagline">' . $me['tagline'] . '</span>';
+
+		$var = array(
+			'rows' => array(
+				array($profile_pic, $caption),
+			),
+		);
+
+    $return .= theme('table', $var);
+
+		$var = array(
+			'rows' => array(
+			),
+		);
+
+		if (isset($me['aboutMe'])) {
+			$var['rows'][] = array('Introduction', $me['aboutMe']);
+		}
+
+		if (isset($me['nickname'])) {
+      $var['rows'][] = array('Nickname', $me['nickname']);
+    }
+
+		if (isset($me['birthday'])) {
+      $var['rows'][] = array('Birthday', $me['birthday']);
+    }
+
+		if (isset($me['gender'])) {
+      $var['rows'][] = array('Gender', $me['gender']);
+    }
+
+		if (isset($me['relationshipStatus'])) {
+      $var['rows'][] = array('Relationship Status', $me['relationshipStatus']);
+    }
+
+		if (isset($me['languagesSpoken'])) {
+      $var['rows'][] = array('Languages Spoken', $me['languagesSpoken']);
+    }
+
+		if (isset($me['currentLocation'])) {
+      $var['rows'][] = array('Current Location', $me['currentLocation']);
+    }
+
+		if (isset($me['emails'])) {
+			$column = '';
+
+			foreach($me['emails'] as $email) {
+				$column .= $email['type'] . ' - ' . $email['value'] . (($email['primary']) ? ' (primary)' : '') . '<br />';
+			}
+			$var['rows'][] = array('Emails', $column);
+		}
+
+		if (isset($me['placesLived'])) {
+      $column = '';
+
+      foreach($me['placesLived'] as $place) {
+        $column .= $place['value'] . ((isset($place['primary'])) ? ' (primary)' : '') . '<br />';
+      }
+      $var['rows'][] = array('Places lived', $column);
+    }
+
+		if (isset($me['organizations'])) {
+      $column_ed = '';
+			$column_job = '';
+
+      foreach($me['organizations'] as $org) {
+				if ($org['type'] == 'work') {
+					$column_job .= $org['name'] . ((isset($org['primary'])) ? ' (primary)' : '') . '<br />';
+				} elseif ($org['type'] == 'school') {
+          $column_ed .= $org['name'] . ((isset($org['primary'])) ? ' (primary)' : '') . '<br />';
+        }
+      }
+
+      if ($column_job != '') {
+				$var['rows'][] = array('Employment', $column_job);
+			}
+			if ($column_ed != '') {
+	      $var['rows'][] = array('Education', $column_ed);
+			}
+    }
+
+		$return .= theme('table', $var);
+	} else {
+		$return .= 'Error';
+	}
+
+	return $return;
 }
