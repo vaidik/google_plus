@@ -37,6 +37,27 @@ function google_plus_form_alter(&$form, &$form_state, &$form_id) {
       '#default_value' => !empty($user->data['google_plus']['api_key']) ? $user->data['google_plus']['api_key'] : '',
     );
 
+		$form['google_plus']['profile'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Google+ Profile Details',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+
+		$form['google_plus']['profile']['id'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Profile ID'),
+      '#default_value' => !empty($user->data['google_plus']['id']) ? $user->data['google_plus']['id'] : '',
+			'#attributes' => array('disabled' => 'disabled'),
+    );
+
+		$form['google_plus']['profile']['url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Profile URL'),
+      '#default_value' => !empty($user->data['google_plus']['url']) ? $user->data['google_plus']['url'] : '',
+			'#attributes' => array('disabled' => 'disabled'),
+    );
+
 		$form['#validate'][] = 'google_plus_user_profile_validate';
 		$form['#submit'][] = 'google_plus_user_profile_submit';
 	}
@@ -90,11 +111,11 @@ function google_plus_prepare_client($uid = NULL) {
 	}
 
 	$client = new apiClient();
-  $client->setApplicationName("Google+ Drupal Module Made");
+  $client->setApplicationName(variable_get('google_plus_product_name', variable_get('site_name')));
 
   $client->setClientId($user->data['google_plus']['client_id']);
   $client->setClientSecret($user->data['google_plus']['client_secret']);
-  $client->setRedirectUri($user->data['google_plus']['redirect_uri']);
+  $client->setRedirectUri(variable_get('google_plus_redirect_uri', ''));
   $client->setDeveloperKey($user->data['google_plus']['api_key']);
 
   $client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
@@ -120,19 +141,16 @@ function google_plus_get_access_token() {
 		$plus = new apiPlusService($client);
 
   	$client->authenticate();
-
 	  $user->data['google_plus']['access_token'] = $client->getAccessToken();
+
+    $me = $plus->people->get('me');
+		$user->data['google_plus']['id'] = $me['id'];
+		$user->data['google_plus']['url'] = $me['url'];
+
 		user_save($user);
 
-		$options['query'] = array(
-			'google_plus_success' => 'success',
-		);
-		drupal_goto('google_plus/access_token', $options);
-
-	} elseif(isset($_GET['google_plus_success'])) {
-
 		drupal_set_message(t('Your Google+ authentication token has been successfully saved.'));
-		return '';
+		drupal_goto('user/' . $user->uid . '/edit');
 
 	} elseif (isset($_GET['error'])) {
 
@@ -164,7 +182,7 @@ function google_plus_menu() {
 		'title' => t('Google+ Profile'),
     'description' => t('Shows Google+ profile of the logged in user.'),
     'page callback' => 'google_plus_profile',
-    'page arguments' => array('access google plus'),
+    'page arguments' => array(1),
     'access arguments' => array('access google plus'),
     'type' => MENU_LOCAL_TASK,
 	);
@@ -176,6 +194,15 @@ function google_plus_menu() {
     'page arguments' => array(),
     'access arguments' => array('access google plus'),
   );
+
+	$items['admin/config/people/google_plus'] = array(
+    'title' => t('Google+ Settings'),
+    'description' => t('Configure site-wide settings for Google+.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('google_plus_admin'),
+		'file' => 'google_plus.admin.inc',
+    'access arguments' => array('administer google plus'),
+	);
 
 	return $items;
 }
