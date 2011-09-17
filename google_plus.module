@@ -82,18 +82,30 @@ function google_plus_user_profile_submit($form, $form_state) {
   }
 }
 
+function google_plus_prepare_client($uid = NULL) {
+	if ($uid) {
+		$user = user_load($uid);
+	} else {
+		global $user;
+	}
+
+	$client = new apiClient();
+  $client->setApplicationName("Google+ Drupal Module Made");
+
+  $client->setClientId($user->data['google_plus']['client_id']);
+  $client->setClientSecret($user->data['google_plus']['client_secret']);
+  $client->setRedirectUri($user->data['google_plus']['redirect_uri']);
+  $client->setDeveloperKey($user->data['google_plus']['api_key']);
+
+  $client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
+
+	return $client;
+}
+
 function google_plus_authorize() {
 	global $user;
 
-	$client = new apiClient();
-	$client->setApplicationName("Google+ Drupal Module Made");
-
-	$client->setClientId($user->data['google_plus']['client_id']);
-	$client->setClientSecret($user->data['google_plus']['client_secret']);
-	$client->setRedirectUri($user->data['google_plus']['redirect_uri']);
-	$client->setDeveloperKey($user->data['google_plus']['api_key']);
-
-	$client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
+	$client = google_plus_prepare_client($user->uid);
 	$plus = new apiPlusService($client);
 
 	$authUrl = $client->createAuthUrl();
@@ -104,15 +116,7 @@ function google_plus_get_access_token() {
 	if (isset($_GET['code'])) {
 		global $user;
 
-		$client = new apiClient();
-  	$client->setApplicationName("Google+ Drupal Module Made");
-
-	  $client->setClientId($user->data['google_plus']['client_id']);
-  	$client->setClientSecret($user->data['google_plus']['client_secret']);
-	  $client->setRedirectUri($user->data['google_plus']['redirect_uri']);
-  	$client->setDeveloperKey($user->data['google_plus']['api_key']);
-
-	  $client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
+		$client = google_plus_prepare_client($user->uid);
 		$plus = new apiPlusService($client);
 
   	$client->authenticate();
@@ -176,18 +180,14 @@ function google_plus_menu() {
 	return $items;
 }
 
-function google_plus_profile() {
-	global $user;
+function google_plus_profile($uid = NULL) {
+	if ($uid) {
+		$user = user_load($uid);
+	} else {
+		global $user;
+	}
 
-	$client = new apiClient();
-  $client->setApplicationName("Google+ Drupal Module Made");
-
-  $client->setClientId($user->data['google_plus']['client_id']);
-  $client->setClientSecret($user->data['google_plus']['client_secret']);
-  $client->setRedirectUri($user->data['google_plus']['redirect_uri']);
-  $client->setDeveloperKey($user->data['google_plus']['api_key']);
-
-  $client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
+	$client = google_plus_prepare_client($user->uid);
   $plus = new apiPlusService($client);
 
 	$client->setAccessToken($user->data['google_plus']['access_token']);
