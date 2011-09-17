@@ -25,12 +25,6 @@ function google_plus_form_alter(&$form, &$form_state, &$form_id) {
       '#default_value' => !empty($user->data['google_plus']['client_secret']) ? $user->data['google_plus']['client_secret'] : '',
     );
 
-		$form['google_plus']['redirect_uri'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Redirect URI'),
-      '#default_value' => !empty($user->data['google_plus']['redirect_uri']) ? $user->data['google_plus']['redirect_uri'] : '',
-    );
-
 		$form['google_plus']['api_key'] = array(
       '#type' => 'textfield',
       '#title' => t('API Key'),
@@ -58,17 +52,8 @@ function google_plus_form_alter(&$form, &$form_state, &$form_id) {
 			'#attributes' => array('disabled' => 'disabled'),
     );
 
-		$form['#validate'][] = 'google_plus_user_profile_validate';
 		$form['#submit'][] = 'google_plus_user_profile_submit';
 	}
-}
-
-function google_plus_user_profile_validate($form, $form_state) {
-	if (isset($form['#user'])) {
-    if (!valid_url($form_state['values']['redirect_uri'], TRUE)) {
-			form_set_error('redirect_uri', t('Invalid Request URI.'));
-		}
-  }
 }
 
 function google_plus_user_profile_submit($form, $form_state) {
@@ -83,11 +68,6 @@ function google_plus_user_profile_submit($form, $form_state) {
 
 		if ($plus['client_secret'] != $form_state['values']['client_secret']) {
 		  $user->data['google_plus']['client_secret'] = $form_state['values']['client_secret'];
-			$ch = 1;
-		}
-
-		if ($plus['redirect_uri'] != $form_state['values']['redirect_uri']) {
-		  $user->data['google_plus']['redirect_uri'] = $form_state['values']['redirect_uri'];
 			$ch = 1;
 		}
 
