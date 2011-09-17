@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * TODO:
+ * 1. Add custom field for Google+ profile links to Drupal Google+ profile view.
+ * 3. Add support for custom menu item for grabbing the access token.
+ * 2. Create activity stream.
+ */
+
 function google_plus_form_alter(&$form, &$form_state, &$form_id) {
 	if (isset($form['#user'])) {
     $user = user_load($form['#user']->uid);
@@ -201,9 +208,6 @@ function google_plus_profile($uid = NULL) {
 
 	if ($client->getAccessToken()) {
 		$me = $plus->people->get('me');
-
-  	$optParams = array('maxResults' => 100);
-	  $activities = $plus->activities->listActivities('me', 'public', $optParams);
 
 		return theme('google_plus_personal_profile', array('me' => $me));
 	}
