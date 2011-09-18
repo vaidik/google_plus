@@ -5,6 +5,10 @@
  * 1. Add custom field for Google+ profile links to Drupal Google+ profile view.
  * 3. Add support for custom menu item for grabbing the access token.
  * 2. Create activity stream.
+ * 4. Support for blocks.
+ * 5. Views integration.
+ * 6. Caching
+ * 7. AJAXify
  */
 
 function google_plus_form_alter(&$form, &$form_state, &$form_id) {
@@ -165,7 +169,7 @@ function google_plus_permission() {
 function google_plus_menu() {
 	$items = array();
 
-	$items['user/%/google_plus'] = array(
+	$items['user/%/google_plus/profile'] = array(
 		'title' => t('Google+ Profile'),
     'description' => t('Shows Google+ profile of the logged in user.'),
     'page callback' => 'google_plus_profile',
@@ -194,6 +198,25 @@ function google_plus_menu() {
 	return $items;
 }
 
+function google_plus_get_people($uid = NULL) {
+	if ($uid) {
+    $user = user_load($uid);
+  } else {
+    global $user;
+  }
+
+  $client = google_plus_prepare_client($user->uid);
+  $plus = new apiPlusService($client);
+
+  $client->setAccessToken($user->data['google_plus']['access_token']);
+
+  if ($client->getAccessToken()) {
+    return $plus->people->get('me');
+	} else {
+		return FALSE;
+	}
+}
+
 function google_plus_profile($uid = NULL) {
 	if ($uid) {
 		$user = user_load($uid);
@@ -201,15 +224,12 @@ function google_plus_profile($uid = NULL) {
 		global $user;
 	}
 
-	$client = google_plus_prepare_client($user->uid);
-  $plus = new apiPlusService($client);
+	$me = google_plus_get_people($user->uid);
 
-	$client->setAccessToken($user->data['google_plus']['access_token']);
-
-	if ($client->getAccessToken()) {
-		$me = $plus->people->get('me');
-
+	if ($me) {
 		return theme('google_plus_personal_profile', array('me' => $me));
+	} else {
+		return 'Error!';
 	}
 }
 
@@ -219,25 +239,26 @@ function google_plus_theme() {
       'variables' => array(
 				'me' => NULL,
 			),
+			'template' => 'google-plus-personal-profile',
     ),
   );
 
 	return $return_array;
 }
 
-function theme_google_plus_personal_profile($variables) {
+function theme_google_plus_personal_profile_2($variables) {
 	$return = '';
 	$me = $variables['me'];
 
 	if ($me) {
-		$profile_pic = theme('image', array('path' => $me['image']['url'] . '?sz=200'));
+		$profile_pic = theme('image', array('path' => $me['image']['url'] . '?sz=150'));
 		$caption = '<span id="displayName">' . l($me['displayName'], $me['url']) . '</span>';
 		$caption .= '<br />';
 		$caption .= '<span id="tagline">' . $me['tagline'] . '</span>';
 
 		$var = array(
 			'rows' => array(
-				array($profile_pic, $caption),
+				array($caption, $profile_pic),
 			),
 		);
 
@@ -320,4 +341,47 @@ function theme_google_plus_personal_profile($variables) {
 	}
 
 	return $return;
+}
+
+function google_plus_get_activity($id) {
+	if (!$id) {
+		return FALSE;
+  }
+
+	global $user;
+
+  $client = google_plus_prepare_client($user->uid);
+  $plus = new apiPlusService($client);
+
+  $client->setAccessToken($user->data['google_plus']['access_token']);
+
+  if ($client->getAccessToken()) {
+
+    return $plus->activities->get($id);
+
+  } else {
+    return FALSE;
+  }
+}
+
+function google_plus_list_activities($userId) {
+	if (!$userId) {
+		return FALSE;
+  }
+
+	global $user;
+
+  $client = google_plus_prepare_client($user->uid);
+  $plus = new apiPlusService($client);
+
+  $client->setAccessToken($user->data['google_plus']['access_token']);
+
+  if ($client->getAccessToken()) {
+
+		$optParams = array('maxResults' => 100);
+    return $plus->activities->listActivities($userId, 'public', $optParams);
+
+  } else {
+    return FALSE;
+  }
 }
