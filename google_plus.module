@@ -163,6 +163,9 @@ function google_plus_permission() {
     'access google plus' => array(
       'title' => t('Access Google+'),
     ),
+    'administer google plus' => array(
+      'title' => t('Administer Google+'),
+    ),
 	);
 }
 
@@ -246,103 +249,6 @@ function google_plus_theme() {
 	return $return_array;
 }
 
-function theme_google_plus_personal_profile_2($variables) {
-	$return = '';
-	$me = $variables['me'];
-
-	if ($me) {
-		$profile_pic = theme('image', array('path' => $me['image']['url'] . '?sz=150'));
-		$caption = '<span id="displayName">' . l($me['displayName'], $me['url']) . '</span>';
-		$caption .= '<br />';
-		$caption .= '<span id="tagline">' . $me['tagline'] . '</span>';
-
-		$var = array(
-			'rows' => array(
-				array($caption, $profile_pic),
-			),
-		);
-
-    $return .= theme('table', $var);
-
-		$var = array(
-			'rows' => array(
-			),
-		);
-
-		if (isset($me['aboutMe'])) {
-			$var['rows'][] = array('Introduction', $me['aboutMe']);
-		}
-
-		if (isset($me['nickname'])) {
-      $var['rows'][] = array('Nickname', $me['nickname']);
-    }
-
-		if (isset($me['birthday'])) {
-      $var['rows'][] = array('Birthday', $me['birthday']);
-    }
-
-		if (isset($me['gender'])) {
-      $var['rows'][] = array('Gender', $me['gender']);
-    }
-
-		if (isset($me['relationshipStatus'])) {
-      $var['rows'][] = array('Relationship Status', $me['relationshipStatus']);
-    }
-
-		if (isset($me['languagesSpoken'])) {
-      $var['rows'][] = array('Languages Spoken', $me['languagesSpoken']);
-    }
-
-		if (isset($me['currentLocation'])) {
-      $var['rows'][] = array('Current Location', $me['currentLocation']);
-    }
-
-		if (isset($me['emails'])) {
-			$column = '';
-
-			foreach($me['emails'] as $email) {
-				$column .= $email['type'] . ' - ' . $email['value'] . (($email['primary']) ? ' (primary)' : '') . '<br />';
-			}
-			$var['rows'][] = array('Emails', $column);
-		}
-
-		if (isset($me['placesLived'])) {
-      $column = '';
-
-      foreach($me['placesLived'] as $place) {
-        $column .= $place['value'] . ((isset($place['primary'])) ? ' (primary)' : '') . '<br />';
-      }
-      $var['rows'][] = array('Places lived', $column);
-    }
-
-		if (isset($me['organizations'])) {
-      $column_ed = '';
-			$column_job = '';
-
-      foreach($me['organizations'] as $org) {
-				if ($org['type'] == 'work') {
-					$column_job .= $org['name'] . ((isset($org['primary'])) ? ' (primary)' : '') . '<br />';
-				} elseif ($org['type'] == 'school') {
-          $column_ed .= $org['name'] . ((isset($org['primary'])) ? ' (primary)' : '') . '<br />';
-        }
-      }
-
-      if ($column_job != '') {
-				$var['rows'][] = array('Employment', $column_job);
-			}
-			if ($column_ed != '') {
-	      $var['rows'][] = array('Education', $column_ed);
-			}
-    }
-
-		$return .= theme('table', $var);
-	} else {
-		$return .= 'Error';
-	}
-
-	return $return;
-}
-
 function google_plus_get_activity($id) {
 	if (!$id) {
 		return FALSE;
@@ -384,4 +290,86 @@ function google_plus_list_activities($userId) {
   } else {
     return FALSE;
   }
+}
+
+function google_plus_block_info() {
+	$blocks = array();
+
+	$blocks['google_plus_activity'] = array(
+		'info' => t('Google+ Activity'),
+		'cache' => DRUPAL_NO_CACHE,
+	);
+
+	return $blocks;
+}
+
+function google_plus_block_view($block_name = '') {
+	if ($block_name == 'google_plus_activity') {
+		$activities = google_plus_list_activities(variable_get('google_plus_block_userid', NULL));
+	
+		$count = 0;
+		$max = variable_get('google_plus_block_max_num', 10);	
+		$list = array();
+		foreach ($activities['items'] as $activity) {
+			if ($count >= $max) {
+				break;
+			}
+			$count++;
+
+			if ($activity['title'] != '') {
+				$list[] = array(l($activity['title'], $activity['url'], array('attributes' => array('target' => '_blank'))));
+			} else {
+				foreach ($activity['object']['attachments'] as $attachment) {
+					if ($attachment['objectType'] == 'article') {
+						$list[] = array(l($attachment['displayName'], $activity['url'], array('attributes' => array('target' => '_blank'))));
+					}
+				}
+			}
+		}
+
+		$theme_args = array('items' => $list, 'type' => 'ul');
+
+		$content = theme('item_list', $theme_args);
+
+		$block = array(
+			'subject' => t('Enabled Modules'),
+			'content' => $content,
+		);
+		return $block;
+	}
+}
+
+function google_plus_block_configure($delta = '') {
+  $form = array();
+  if ($delta == 'google_plus_activity') {
+		$form['google_plus'] = array(
+			'#type' => 'fieldset',
+      '#title' => t('Google+ Block Settings'),
+			'#collapsed' => FALSE,
+	    '#collapsible' => TRUE,
+		);
+
+    $form['google_plus']['userid'] = array(
+      '#type' => 'textfield',
+      '#title' => t('User ID'),
+      '#description' => t('Provide the userId of the Google+ account which is going to provide the public list of activities for this block.'),
+      '#default_value' => variable_get('google_plus_block_userid', ''),
+    );
+
+    $form['google_plus']['max_num'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of activities'),
+      '#description' => t('Number of activities to show in this block. Latest activities will be shown.'),
+      '#default_value' => variable_get('google_plus_block_max_num', 10),
+    );
+  }
+  return $form;
+}
+
+function google_plus_block_save($delta = '', $edit = array()) {
+  if ($delta == 'google_plus_activity') {
+    variable_set('google_plus_block_userid', $edit['userid']);
+    variable_set('google_plus_block_max_num', $edit['max_num']);
+  }
+  return;
 }

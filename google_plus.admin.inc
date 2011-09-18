@@ -3,13 +3,20 @@
 function google_plus_admin() {
 	$item = array();
 
-	$item['product_name'] = array(
+	$item['google_plus'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Google+ Settings'),
+    '#collapsed' => FALSE,
+    '#collapsible' => TRUE,
+  );
+
+	$item['google_plus']['product_name'] = array(
 		'#type' => 'textfield',
     '#title' => t('Product Name'),
     '#default_value' => variable_get('google_plus_product_name', ''),
 	);
 
-	$item['redirect_uri'] = array(
+	$item['google_plus']['redirect_uri'] = array(
 		'#type' => 'textfield',
     '#title' => t('Redirect URI'),
     '#default_value' => variable_get('google_plus_redirect_uri', ''),
