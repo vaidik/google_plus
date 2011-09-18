@@ -11,6 +11,9 @@
  * 7. AJAXify
  */
 
+/**
+ * Implementation of hook_form_alter.
+ */
 function google_plus_form_alter(&$form, &$form_state, &$form_id) {
 	if (isset($form['#user'])) {
     $user = user_load($form['#user']->uid);
@@ -67,6 +70,9 @@ function google_plus_form_alter(&$form, &$form_state, &$form_id) {
 	}
 }
 
+/**
+ * Submit handler for google_plus_form_alter().
+ */
 function google_plus_user_profile_submit($form, $form_state) {
 	if (isset($form['#user'])) {
     $user = user_load($form['#user']->uid);
@@ -94,6 +100,9 @@ function google_plus_user_profile_submit($form, $form_state) {
   }
 }
 
+/**
+ * Prepares client for access Google+ data.
+ */
 function google_plus_prepare_client($uid = NULL) {
 	if ($uid) {
 		$user = user_load($uid);
@@ -114,6 +123,10 @@ function google_plus_prepare_client($uid = NULL) {
 	return $client;
 }
 
+/**
+ * Function to allow user to authorize this module for accessing Google+ data on his/her behalf.
+ * OAuth2 protocol is used.
+ */
 function google_plus_authorize() {
 	global $user;
 
@@ -124,6 +137,9 @@ function google_plus_authorize() {
 	drupal_goto($authUrl);
 }
 
+/**
+ * Function to get access token after the user has authorized. The access token is saved separately for every user.
+ */
 function google_plus_get_access_token() {
 	if (isset($_GET['code'])) {
 		global $user;
@@ -158,6 +174,9 @@ function google_plus_get_access_token() {
 	}
 }
 
+/**
+ * Implementation of hook_permission.
+ */
 function google_plus_permission() {
   return array(
     'access google plus' => array(
@@ -169,6 +188,9 @@ function google_plus_permission() {
 	);
 }
 
+/**
+ * Implementation of hook_menu.
+ */
 function google_plus_menu() {
 	$items = array();
 
@@ -193,7 +215,7 @@ function google_plus_menu() {
     'title' => t('Google+ Settings'),
     'description' => t('Configure site-wide settings for Google+.'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('google_plus_admin'),
+    'page arguments' => array('google_plus_admin_form'),
 		'file' => 'google_plus.admin.inc',
     'access arguments' => array('administer google plus'),
 	);
@@ -201,6 +223,9 @@ function google_plus_menu() {
 	return $items;
 }
 
+/**
+ * Wrapper function for getting the 'people' resource from Google+.
+ */
 function google_plus_get_people($uid = NULL) {
 	if ($uid) {
     $user = user_load($uid);
@@ -220,6 +245,9 @@ function google_plus_get_people($uid = NULL) {
 	}
 }
 
+/**
+ * Callback for Google+ profile tab for any drupal user.
+ */
 function google_plus_profile($uid = NULL) {
 	if ($uid) {
 		$user = user_load($uid);
@@ -236,6 +264,9 @@ function google_plus_profile($uid = NULL) {
 	}
 }
 
+/**
+ * Implementation of hook_theme.
+ */
 function google_plus_theme() {
 	$return_array = array(
     'google_plus_personal_profile' => array(
@@ -249,6 +280,9 @@ function google_plus_theme() {
 	return $return_array;
 }
 
+/**
+ * Wrapper function to get activity resource from Google+.
+ */
 function google_plus_get_activity($id) {
 	if (!$id) {
 		return FALSE;
@@ -270,6 +304,9 @@ function google_plus_get_activity($id) {
   }
 }
 
+/**
+ * Wrapper function to get list of activities (activity resources) from Google+ for a particular Google+ account.
+ */
 function google_plus_list_activities($userId) {
 	if (!$userId) {
 		return FALSE;
@@ -292,6 +329,9 @@ function google_plus_list_activities($userId) {
   }
 }
 
+/**
+ * Implementation of hook_block_info.
+ */
 function google_plus_block_info() {
 	$blocks = array();
 
@@ -303,6 +343,9 @@ function google_plus_block_info() {
 	return $blocks;
 }
 
+/**
+ * Implementation of hook_block_view.
+ */
 function google_plus_block_view($block_name = '') {
 	if ($block_name == 'google_plus_activity') {
 		$activities = google_plus_list_activities(variable_get('google_plus_block_userid', NULL));
@@ -339,6 +382,9 @@ function google_plus_block_view($block_name = '') {
 	}
 }
 
+/**
+ * Implementation of hook_block_configure.
+ */
 function google_plus_block_configure($delta = '') {
   $form = array();
   if ($delta == 'google_plus_activity') {
@@ -366,6 +412,9 @@ function google_plus_block_configure($delta = '') {
   return $form;
 }
 
+/**
+ * Implementation of hook_block_save.
+ */
 function google_plus_block_save($delta = '', $edit = array()) {
   if ($delta == 'google_plus_activity') {
     variable_set('google_plus_block_userid', $edit['userid']);

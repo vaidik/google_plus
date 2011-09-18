@@ -1,6 +1,9 @@
 <?php
 
-function google_plus_admin() {
+/**
+ * Implementation of hook_form.
+ */
+function google_plus_admin_form() {
 	$item = array();
 
 	$item['google_plus'] = array(
@@ -30,7 +33,10 @@ function google_plus_admin() {
 	return $item;
 }
 
-function google_plus_admin_validate($form, $form_state) {
+/**
+ * Validation handler for google_plus_admin_form.
+ */
+function google_plus_admin_form_validate($form, $form_state) {
 	if (empty($form_state['values']['product_name'])) {
 		form_set_error('product_name', t('You must set a product name for this Drupal installation.'));
 	}
@@ -40,7 +46,10 @@ function google_plus_admin_validate($form, $form_state) {
   }
 }
 
-function google_plus_admin_submit($form, $form_state) {
+/**
+ * Submit handler for google_plus_admin_form.
+ */
+function google_plus_admin_form_submit($form, $form_state) {
 	variable_set('google_plus_product_name', $form_state['values']['product_name']);
 	variable_set('google_plus_redirect_uri', $form_state['values']['redirect_uri']);
 }
