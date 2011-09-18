@@ -14,88 +14,88 @@
  * Implementation of hook_form_alter.
  */
 function google_plus_form_alter(&$form, &$form_state, &$form_id) {
-	if (isset($form['#user'])) {
+  if (isset($form['#user'])) {
     $user = user_load($form['#user']->uid);
   }
 
-	if ($form_id == 'user_profile_form') {
-		$form['google_plus'] = array(
+  if ($form_id == 'user_profile_form') {
+    $form['google_plus'] = array(
       '#type' => 'fieldset',
       '#title' => 'Google+ Settings',
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
 
-		$form['google_plus']['client_id'] = array(
-			'#type' => 'textfield',
+    $form['google_plus']['client_id'] = array(
+      '#type' => 'textfield',
       '#title' => t('Client ID'),
       '#default_value' => !empty($user->data['google_plus']['client_id']) ? $user->data['google_plus']['client_id'] : '',
-		);
+    );
 
-		$form['google_plus']['client_secret'] = array(
+    $form['google_plus']['client_secret'] = array(
       '#type' => 'textfield',
       '#title' => t('Client Secret'),
       '#default_value' => !empty($user->data['google_plus']['client_secret']) ? $user->data['google_plus']['client_secret'] : '',
     );
 
-		$form['google_plus']['api_key'] = array(
+    $form['google_plus']['api_key'] = array(
       '#type' => 'textfield',
       '#title' => t('API Key'),
       '#default_value' => !empty($user->data['google_plus']['api_key']) ? $user->data['google_plus']['api_key'] : '',
     );
 
-		$form['google_plus']['profile'] = array(
+    $form['google_plus']['profile'] = array(
       '#type' => 'fieldset',
       '#title' => 'Google+ Profile Details',
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
 
-		$form['google_plus']['profile']['id'] = array(
+    $form['google_plus']['profile']['id'] = array(
       '#type' => 'textfield',
       '#title' => t('Profile ID'),
       '#default_value' => !empty($user->data['google_plus']['id']) ? $user->data['google_plus']['id'] : '',
-			'#attributes' => array('disabled' => 'disabled'),
+      '#attributes' => array('disabled' => 'disabled'),
     );
 
-		$form['google_plus']['profile']['url'] = array(
+    $form['google_plus']['profile']['url'] = array(
       '#type' => 'textfield',
       '#title' => t('Profile URL'),
       '#default_value' => !empty($user->data['google_plus']['url']) ? $user->data['google_plus']['url'] : '',
-			'#attributes' => array('disabled' => 'disabled'),
+      '#attributes' => array('disabled' => 'disabled'),
     );
 
-		$form['#submit'][] = 'google_plus_user_profile_submit';
-	}
+    $form['#submit'][] = 'google_plus_user_profile_submit';
+  }
 }
 
 /**
  * Submit handler for google_plus_form_alter().
  */
 function google_plus_user_profile_submit($form, $form_state) {
-	if (isset($form['#user'])) {
+  if (isset($form['#user'])) {
     $user = user_load($form['#user']->uid);
-		$plus = $user->data['google_plus'];
+    $plus = $user->data['google_plus'];
 
-		if ($plus['client_id'] != $form_state['values']['client_id']) {
-		  $user->data['google_plus']['client_id'] = $form_state['values']['client_id'];
-			$ch = 1;
-		}
+    if ($plus['client_id'] != $form_state['values']['client_id']) {
+      $user->data['google_plus']['client_id'] = $form_state['values']['client_id'];
+      $ch = 1;
+    }
 
-		if ($plus['client_secret'] != $form_state['values']['client_secret']) {
-		  $user->data['google_plus']['client_secret'] = $form_state['values']['client_secret'];
-			$ch = 1;
-		}
+    if ($plus['client_secret'] != $form_state['values']['client_secret']) {
+      $user->data['google_plus']['client_secret'] = $form_state['values']['client_secret'];
+      $ch = 1;
+    }
 
-		if ($plus['api_key'] != $form_state['values']['api_key']) {
-		  $user->data['google_plus']['api_key'] = $form_state['values']['api_key'];
-			$ch = 1;
-		}
+    if ($plus['api_key'] != $form_state['values']['api_key']) {
+      $user->data['google_plus']['api_key'] = $form_state['values']['api_key'];
+      $ch = 1;
+    }
 
-		if (isset($ch)) {
-	  	user_save($user);
-			google_plus_authorize();
-		}
+    if (isset($ch)) {
+      user_save($user);
+      google_plus_authorize();
+    }
   }
 }
 
@@ -103,13 +103,13 @@ function google_plus_user_profile_submit($form, $form_state) {
  * Prepares client for access Google+ data.
  */
 function google_plus_prepare_client($uid = NULL) {
-	if ($uid) {
-		$user = user_load($uid);
-	} else {
-		global $user;
-	}
+  if ($uid) {
+    $user = user_load($uid);
+  } else {
+    global $user;
+  }
 
-	$client = new apiClient();
+  $client = new apiClient();
   $client->setApplicationName(variable_get('google_plus_product_name', variable_get('site_name')));
 
   $client->setClientId($user->data['google_plus']['client_id']);
@@ -119,7 +119,7 @@ function google_plus_prepare_client($uid = NULL) {
 
   $client->setScopes(array('https://www.googleapis.com/auth/plus.me'));
 
-	return $client;
+  return $client;
 }
 
 /**
@@ -127,50 +127,50 @@ function google_plus_prepare_client($uid = NULL) {
  * OAuth2 protocol is used.
  */
 function google_plus_authorize() {
-	global $user;
+  global $user;
 
-	$client = google_plus_prepare_client($user->uid);
-	$plus = new apiPlusService($client);
+  $client = google_plus_prepare_client($user->uid);
+  $plus = new apiPlusService($client);
 
-	$authUrl = $client->createAuthUrl();
-	drupal_goto($authUrl);
+  $authUrl = $client->createAuthUrl();
+  drupal_goto($authUrl);
 }
 
 /**
  * Function to get access token after the user has authorized. The access token is saved separately for every user.
  */
 function google_plus_get_access_token() {
-	if (isset($_GET['code'])) {
-		global $user;
+  if (isset($_GET['code'])) {
+    global $user;
 
-		$client = google_plus_prepare_client($user->uid);
-		$plus = new apiPlusService($client);
+    $client = google_plus_prepare_client($user->uid);
+    $plus = new apiPlusService($client);
 
-  	$client->authenticate();
-	  $user->data['google_plus']['access_token'] = $client->getAccessToken();
+    $client->authenticate();
+    $user->data['google_plus']['access_token'] = $client->getAccessToken();
 
     $me = $plus->people->get('me');
-		$user->data['google_plus']['id'] = $me['id'];
-		$user->data['google_plus']['url'] = $me['url'];
+    $user->data['google_plus']['id'] = $me['id'];
+    $user->data['google_plus']['url'] = $me['url'];
 
-		user_save($user);
+    user_save($user);
 
-		drupal_set_message(t('Your Google+ authentication token has been successfully saved.'));
-		drupal_goto('user/' . $user->uid . '/edit');
+    drupal_set_message(t('Your Google+ authentication token has been successfully saved.'));
+    drupal_goto('user/' . $user->uid . '/edit');
 
-	} elseif (isset($_GET['error'])) {
+  } elseif (isset($_GET['error'])) {
 
-		$options['query'] = array(
-			'google_plus_error' => $_GET['error'],
-		);
-		drupal_goto('google_plus/access_token', $options);
+    $options['query'] = array(
+      'google_plus_error' => $_GET['error'],
+    );
+    drupal_goto('google_plus/access_token', $options);
 
-	} elseif (isset($_GET['google_plus_error'])) {
+  } elseif (isset($_GET['google_plus_error'])) {
 
-		drupal_set_message(t('You denied access to your own Google+ account.'), 'error');
-		return '';
+    drupal_set_message(t('You denied access to your own Google+ account.'), 'error');
+    return '';
 
-	}
+  }
 }
 
 /**
@@ -184,25 +184,25 @@ function google_plus_permission() {
     'administer google plus' => array(
       'title' => t('Administer Google+'),
     ),
-	);
+  );
 }
 
 /**
  * Implementation of hook_menu.
  */
 function google_plus_menu() {
-	$items = array();
+  $items = array();
 
-	$items['user/%/google_plus/profile'] = array(
-		'title' => t('Google+ Profile'),
+  $items['user/%/google_plus/profile'] = array(
+    'title' => t('Google+ Profile'),
     'description' => t('Shows Google+ profile of the logged in user.'),
     'page callback' => 'google_plus_profile',
     'page arguments' => array(1),
     'access arguments' => array('access google plus'),
     'type' => MENU_LOCAL_TASK,
-	);
+  );
 
-	$items['google_plus/access_token'] = array(
+  $items['google_plus/access_token'] = array(
     'title' => t('Google+ Access Token'),
     'description' => t('Shows Google+ profile of the logged in user.'),
     'page callback' => 'google_plus_get_access_token',
@@ -210,24 +210,24 @@ function google_plus_menu() {
     'access arguments' => array('access google plus'),
   );
 
-	$items['admin/config/people/google_plus'] = array(
+  $items['admin/config/people/google_plus'] = array(
     'title' => t('Google+ Settings'),
     'description' => t('Configure site-wide settings for Google+.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('google_plus_admin_form'),
-		'file' => 'google_plus.admin.inc',
+    'file' => 'google_plus.admin.inc',
     'access arguments' => array('administer google plus'),
-	);
+  );
 
-	return $items;
+  return $items;
 }
 
 /**
  * Wrapper function for getting the 'people' resource from Google+.
  */
 function google_plus_get_people($userId = NULL) {
-	if (!$userId) {
-		return FALSE;
+  if (!$userId) {
+    return FALSE;
   }
 
   global $user;
@@ -239,55 +239,55 @@ function google_plus_get_people($userId = NULL) {
 
   if ($client->getAccessToken()) {
     return $plus->people->get($userId);
-	} else {
-		return FALSE;
-	}
+  } else {
+    return FALSE;
+  }
 }
 
 /**
  * Callback for Google+ profile tab for any drupal user.
  */
 function google_plus_profile($uid = NULL) {
-	if ($uid) {
-		$user = user_load($uid);
-	} else {
-		global $user;
-	}
+  if ($uid) {
+    $user = user_load($uid);
+  } else {
+    global $user;
+  }
 
-	$me = google_plus_get_people($user->data['google_plus']['id']);
+  $me = google_plus_get_people($user->data['google_plus']['id']);
 
-	if ($me) {
-		return theme('google_plus_personal_profile', array('me' => $me));
-	} else {
-		return 'Error!';
-	}
+  if ($me) {
+    return theme('google_plus_personal_profile', array('me' => $me));
+  } else {
+    return 'Error!';
+  }
 }
 
 /**
  * Implementation of hook_theme.
  */
 function google_plus_theme() {
-	$return_array = array(
+  $return_array = array(
     'google_plus_personal_profile' => array(
       'variables' => array(
-				'me' => NULL,
-			),
-			'template' => 'google-plus-personal-profile',
+        'me' => NULL,
+      ),
+      'template' => 'google-plus-personal-profile',
     ),
   );
 
-	return $return_array;
+  return $return_array;
 }
 
 /**
  * Wrapper function to get activity resource from Google+.
  */
 function google_plus_get_activity($id) {
-	if (!$id) {
-		return FALSE;
+  if (!$id) {
+    return FALSE;
   }
 
-	global $user;
+  global $user;
 
   $client = google_plus_prepare_client($user->uid);
   $plus = new apiPlusService($client);
@@ -295,9 +295,7 @@ function google_plus_get_activity($id) {
   $client->setAccessToken($user->data['google_plus']['access_token']);
 
   if ($client->getAccessToken()) {
-
     return $plus->activities->get($id);
-
   } else {
     return FALSE;
   }
@@ -307,11 +305,11 @@ function google_plus_get_activity($id) {
  * Wrapper function to get list of activities (activity resources) from Google+ for a particular Google+ account.
  */
 function google_plus_list_activities($userId) {
-	if (!$userId) {
-		return FALSE;
+  if (!$userId) {
+    return FALSE;
   }
 
-	global $user;
+  global $user;
 
   $client = google_plus_prepare_client($user->uid);
   $plus = new apiPlusService($client);
@@ -320,7 +318,7 @@ function google_plus_list_activities($userId) {
 
   if ($client->getAccessToken()) {
 
-		$optParams = array('maxResults' => 100);
+    $optParams = array('maxResults' => 100);
     return $plus->activities->listActivities($userId, 'public', $optParams);
 
   } else {
@@ -332,56 +330,56 @@ function google_plus_list_activities($userId) {
  * Implementation of hook_block_info.
  */
 function google_plus_block_info() {
-	$blocks = array();
+  $blocks = array();
 
-	$blocks['google_plus_activity'] = array(
-		'info' => t('Google+ Activity'),
-		'cache' => DRUPAL_NO_CACHE,
-	);
+  $blocks['google_plus_activity'] = array(
+    'info' => t('Google+ Activity'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
 
-	return $blocks;
+  return $blocks;
 }
 
 /**
  * Implementation of hook_block_view.
  */
 function google_plus_block_view($block_name = '') {
-	if ($block_name == 'google_plus_activity') {
-		$activities = google_plus_list_activities(variable_get('google_plus_block_userid', NULL));
-	
-		if ($activities) {
-			$count = 0;
-			$max = variable_get('google_plus_block_max_num', 10);	
-			$list = array();
-			foreach ($activities['items'] as $activity) {
-				if ($count >= $max) {
-					break;
-				}
-				$count++;
+  if ($block_name == 'google_plus_activity') {
+    $activities = google_plus_list_activities(variable_get('google_plus_block_userid', NULL));
+  
+    if ($activities) {
+      $count = 0;
+      $max = variable_get('google_plus_block_max_num', 10);  
+      $list = array();
+      foreach ($activities['items'] as $activity) {
+        if ($count >= $max) {
+          break;
+        }
+        $count++;
 
-				if ($activity['title'] != '') {
-					$list[] = array(l($activity['title'], $activity['url'], array('attributes' => array('target' => '_blank'))));
-				} else {
-					foreach ($activity['object']['attachments'] as $attachment) {
-						if ($attachment['objectType'] == 'article') {
-							$list[] = array(l($attachment['displayName'], $activity['url'], array('attributes' => array('target' => '_blank'))));
-						}
-					}
-				}
-			}
-			$theme_args = array('items' => $list, 'type' => 'ul');
+        if ($activity['title'] != '') {
+          $list[] = array(l($activity['title'], $activity['url'], array('attributes' => array('target' => '_blank'))));
+        } else {
+          foreach ($activity['object']['attachments'] as $attachment) {
+            if ($attachment['objectType'] == 'article') {
+              $list[] = array(l($attachment['displayName'], $activity['url'], array('attributes' => array('target' => '_blank'))));
+            }
+          }
+        }
+      }
+      $theme_args = array('items' => $list, 'type' => 'ul');
 
-			$content = theme('item_list', $theme_args);
-		} else {
-			$content = t('Error in fetching. Check if the userId provided for this block is correct. If that doesn\'t work than check if you provided the correct details for accessing Google+ by setting the credentials in User -> Edit -> Google+ Settings.');
-		}
+      $content = theme('item_list', $theme_args);
+    } else {
+      $content = t('Error in fetching. Check if the userId provided for this block is correct. If that doesn\'t work than check if you provided the correct details for accessing Google+ by setting the credentials in User -> Edit -> Google+ Settings.');
+    }
 
-		$block = array(
-			'subject' => t('Enabled Modules'),
-			'content' => $content,
-		);
-		return $block;
-	}
+    $block = array(
+      'subject' => t('Enabled Modules'),
+      'content' => $content,
+    );
+    return $block;
+  }
 }
 
 /**
@@ -390,12 +388,12 @@ function google_plus_block_view($block_name = '') {
 function google_plus_block_configure($delta = '') {
   $form = array();
   if ($delta == 'google_plus_activity') {
-		$form['google_plus'] = array(
-			'#type' => 'fieldset',
+    $form['google_plus'] = array(
+      '#type' => 'fieldset',
       '#title' => t('Google+ Block Settings'),
-			'#collapsed' => FALSE,
-	    '#collapsible' => TRUE,
-		);
+      '#collapsed' => FALSE,
+      '#collapsible' => TRUE,
+    );
 
     $form['google_plus']['userid'] = array(
       '#type' => 'textfield',

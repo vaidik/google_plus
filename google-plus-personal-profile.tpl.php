@@ -1,55 +1,55 @@
 <?php
-	$path = drupal_get_path('module', 'google_plus');
-	$options = array(
-		'group' => CSS_THEME,
-	);
-	drupal_add_css($path . '/google-plus-user-profile.css', $options);
+  $path = drupal_get_path('module', 'google_plus');
+  $options = array(
+    'group' => CSS_THEME,
+  );
+  drupal_add_css($path . '/google-plus-user-profile.css', $options);
 ?>
 <table id="profile_header">
-	<tr>
-		<td valign="top">
-				<span id="displayName"><?php echo l($me['displayName'], $me['url']); ?></span>
-    		<br />
-		    <span id="tagline"><?php echo $me['tagline']; ?></span>
-		</td>
-		<td width="100">
-			<?php echo theme('image', array('path' => $me['image']['url'] . '?sz=150')); ?>
-		</td>
-	</tr>
+  <tr>
+    <td valign="top">
+        <span id="displayName"><?php echo l($me['displayName'], $me['url']); ?></span>
+        <br />
+        <span id="tagline"><?php echo $me['tagline']; ?></span>
+    </td>
+    <td width="100">
+      <?php echo theme('image', array('path' => $me['image']['url'] . '?sz=150')); ?>
+    </td>
+  </tr>
 </table>
 
 <?php
-	$var = array(
-		'rows' => array(
-	  ),
-	);
+  $var = array(
+    'rows' => array(
+    ),
+  );
 
-	if (isset($me['aboutMe'])) {
-		$var['rows'][] = array('Introduction', $me['aboutMe']);
-	}
+  if (isset($me['aboutMe'])) {
+    $var['rows'][] = array('Introduction', $me['aboutMe']);
+  }
 
-	if (isset($me['nickname'])) {
-  	$var['rows'][] = array('Nickname', $me['nickname']);
-	}
+  if (isset($me['nickname'])) {
+    $var['rows'][] = array('Nickname', $me['nickname']);
+  }
 
-	if (isset($me['birthday'])) {
-  	$var['rows'][] = array('Birthday', $me['birthday']);
-	}
+  if (isset($me['birthday'])) {
+    $var['rows'][] = array('Birthday', $me['birthday']);
+  }
 
-	if (isset($me['gender'])) {
-  	$var['rows'][] = array('Gender', $me['gender']);
-	}
+  if (isset($me['gender'])) {
+    $var['rows'][] = array('Gender', $me['gender']);
+  }
 
-	if (isset($me['relationshipStatus'])) {
-  	$var['rows'][] = array('Relationship Status', $me['relationshipStatus']);
-	}
+  if (isset($me['relationshipStatus'])) {
+    $var['rows'][] = array('Relationship Status', $me['relationshipStatus']);
+  }
 
-	if (isset($me['languagesSpoken'])) {
+  if (isset($me['languagesSpoken'])) {
     $var['rows'][] = array('Languages Spoken', $me['languagesSpoken']);
   }
 
-	if (isset($me['currentLocation'])) {
-  	$var['rows'][] = array('Current Location', $me['currentLocation']);
+  if (isset($me['currentLocation'])) {
+    $var['rows'][] = array('Current Location', $me['currentLocation']);
   }
 
   if (isset($me['emails'])) {
@@ -70,7 +70,7 @@
     $var['rows'][] = array('Places lived', $column);
   }
 
-	if (isset($me['organizations'])) {
+  if (isset($me['organizations'])) {
     $column_ed = '';
     $column_job = '';
 
