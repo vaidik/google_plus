@@ -5,7 +5,6 @@
  * 1. Add custom field for Google+ profile links to Drupal Google+ profile view.
  * 3. Add support for custom menu item for grabbing the access token.
  * 2. Create activity stream.
- * 4. Support for blocks.
  * 5. Views integration.
  * 6. Caching
  * 7. AJAXify
@@ -226,12 +225,12 @@ function google_plus_menu() {
 /**
  * Wrapper function for getting the 'people' resource from Google+.
  */
-function google_plus_get_people($uid = NULL) {
-	if ($uid) {
-    $user = user_load($uid);
-  } else {
-    global $user;
+function google_plus_get_people($userId = NULL) {
+	if (!$userId) {
+		return FALSE;
   }
+
+  global $user;
 
   $client = google_plus_prepare_client($user->uid);
   $plus = new apiPlusService($client);
@@ -239,7 +238,7 @@ function google_plus_get_people($uid = NULL) {
   $client->setAccessToken($user->data['google_plus']['access_token']);
 
   if ($client->getAccessToken()) {
-    return $plus->people->get('me');
+    return $plus->people->get($userId);
 	} else {
 		return FALSE;
 	}
@@ -255,7 +254,7 @@ function google_plus_profile($uid = NULL) {
 		global $user;
 	}
 
-	$me = google_plus_get_people($user->uid);
+	$me = google_plus_get_people($user->data['google_plus']['id']);
 
 	if ($me) {
 		return theme('google_plus_personal_profile', array('me' => $me));
