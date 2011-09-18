@@ -349,29 +349,32 @@ function google_plus_block_view($block_name = '') {
 	if ($block_name == 'google_plus_activity') {
 		$activities = google_plus_list_activities(variable_get('google_plus_block_userid', NULL));
 	
-		$count = 0;
-		$max = variable_get('google_plus_block_max_num', 10);	
-		$list = array();
-		foreach ($activities['items'] as $activity) {
-			if ($count >= $max) {
-				break;
-			}
-			$count++;
+		if ($activities) {
+			$count = 0;
+			$max = variable_get('google_plus_block_max_num', 10);	
+			$list = array();
+			foreach ($activities['items'] as $activity) {
+				if ($count >= $max) {
+					break;
+				}
+				$count++;
 
-			if ($activity['title'] != '') {
-				$list[] = array(l($activity['title'], $activity['url'], array('attributes' => array('target' => '_blank'))));
-			} else {
-				foreach ($activity['object']['attachments'] as $attachment) {
-					if ($attachment['objectType'] == 'article') {
-						$list[] = array(l($attachment['displayName'], $activity['url'], array('attributes' => array('target' => '_blank'))));
+				if ($activity['title'] != '') {
+					$list[] = array(l($activity['title'], $activity['url'], array('attributes' => array('target' => '_blank'))));
+				} else {
+					foreach ($activity['object']['attachments'] as $attachment) {
+						if ($attachment['objectType'] == 'article') {
+							$list[] = array(l($attachment['displayName'], $activity['url'], array('attributes' => array('target' => '_blank'))));
+						}
 					}
 				}
 			}
+			$theme_args = array('items' => $list, 'type' => 'ul');
+
+			$content = theme('item_list', $theme_args);
+		} else {
+			$content = t('Error in fetching. Check if the userId provided for this block is correct. If that doesn\'t work than check if you provided the correct details for accessing Google+ by setting the credentials in User -> Edit -> Google+ Settings.');
 		}
-
-		$theme_args = array('items' => $list, 'type' => 'ul');
-
-		$content = theme('item_list', $theme_args);
 
 		$block = array(
 			'subject' => t('Enabled Modules'),
